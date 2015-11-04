@@ -715,6 +715,17 @@
                   Return="ignore" />
     <?endif?>
 
+    <!--<Property Id="WixQuietExecCmdLine" Value="&quot;[INSTALLDIR]service\nssm.exe&quot; stop pxp-agent"/> -->
+    <CustomAction Id="ShutdownPxpAgentService_SetProp"
+                  Property="QtExecCmdLine"
+                  Value="&quot;[INSTALLDIR]service\nssm.exe&quot; stop pxp-agent"
+                  Execute="immediate" />
+    <CustomAction Id="ShutdownPxpAgentService"
+                  BinaryKey="WixCA"
+                  DllEntry="CAQuietExec"
+                  Execute="immediate"
+                  Return="ignore" />
+
     <!-- First, save off properties specified on the command line Second,
          restore the properties set by the command line overriding the recalled
          value from the registry -->
@@ -817,6 +828,17 @@
         <![CDATA[VersionNT64 >= 100 AND $(var.Win64) = no AND NOT (&$(var.OurProductNameWord)Runtime = 2)]]>
       </Custom>
       <?endif?>
+      <!-- Make sure pxp-agent service is shutdown before we validate the install -->
+      <!-- Only executed if pxp-agent is already installed (i.e. an Uninstall or upgrade - check for repair also) -->
+      <Custom Action='ShutdownPxpAgentService_SetProp' Before='ShutdownPxpAgentService'>
+        REMOVE="ALL" OR WIX_UPGRADE_DETECTED or REINSTALL
+      </Custom>
+      <Custom Action='ShutdownPxpAgentService' Before='InstallValidate'>
+        REMOVE="ALL" OR WIX_UPGRADE_DETECTED or REINSTALL
+      </Custom>
+      <!--
+      WIX_UPGRADE_DETECTED
+      -->
     </InstallExecuteSequence>
 
     <!--
